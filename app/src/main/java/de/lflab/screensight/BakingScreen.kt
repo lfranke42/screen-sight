@@ -52,9 +52,7 @@ val imageDescriptions = arrayOf(
 )
 
 @Composable
-fun BakingScreen(
-    bakingViewModel: BakingViewModel = viewModel()
-) {
+fun BakingScreen(bakingViewModel: BakingViewModel) {
     val selectedImage = remember { mutableIntStateOf(0) }
     val placeholderPrompt = stringResource(R.string.prompt_placeholder)
     val placeholderResult = stringResource(R.string.results_placeholder)
