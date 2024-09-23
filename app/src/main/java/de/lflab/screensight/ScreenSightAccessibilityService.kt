@@ -4,10 +4,12 @@ import android.accessibilityservice.AccessibilityButtonController
 import android.accessibilityservice.AccessibilityButtonController.AccessibilityButtonCallback
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.Intent
 import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import androidx.annotation.RequiresApi
+import de.lflab.screensight.support.FloatingServiceSupportActivity
 
 class ScreenSightAccessibilityService : AccessibilityService() {
     private var internalAccessibilityButtonController: AccessibilityButtonController? = null
@@ -20,7 +22,7 @@ class ScreenSightAccessibilityService : AccessibilityService() {
         isAccessibilityButtonAvailable =
             internalAccessibilityButtonController?.isAccessibilityButtonAvailable ?: false
 
-        if (!isAccessibilityButtonAvailable) return
+        // if (!isAccessibilityButtonAvailable) return
 
         serviceInfo = serviceInfo.apply {
             flags = flags or AccessibilityServiceInfo.FLAG_REQUEST_ACCESSIBILITY_BUTTON
@@ -29,6 +31,7 @@ class ScreenSightAccessibilityService : AccessibilityService() {
         accessibilityButtonCallback = object : AccessibilityButtonCallback() {
             override fun onClicked(controller: AccessibilityButtonController?) {
                 Log.d("ScreenSightAccessibilityService", "Accessibility button clicked!")
+                initAnalysis()
             }
 
             override fun onAvailabilityChanged(
@@ -54,4 +57,9 @@ class ScreenSightAccessibilityService : AccessibilityService() {
         TODO("Not yet implemented")
     }
 
+    private fun initAnalysis() {
+        val intent = Intent(this, FloatingServiceSupportActivity::class.java)
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+    }
 }
