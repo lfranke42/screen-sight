@@ -22,6 +22,7 @@
             android:theme="@style/Theme.AppCompat.Translucent" />
         <service
             android:name=".ScreenSightAccessibilityService"
+            android:foregroundServiceType="mediaProjection"
             android:exported="true"
             android:label="@string/accessibility_service_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">

@@ -14,6 +14,8 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import de.lflab.screensight.databinding.ActivityFloatingServiceSupportBinding
+import de.lflab.screensight.util.screenHeight
+import de.lflab.screensight.util.screenWidth
 import java.io.File
 import java.io.FileOutputStream
 
@@ -21,18 +23,7 @@ import java.io.FileOutputStream
 class FloatingServiceSupportActivity : AppCompatActivity() {
     private lateinit var binding: ActivityFloatingServiceSupportBinding
 
-    private val mImageReader: ImageReader by lazy {
-        ImageReader.newInstance(
-            width,
-            height,
-            PixelFormat.RGBA_8888,
-            5
-        )
-    }
-
-    private val width = resources.displayMetrics.widthPixels
-    private val height = resources.displayMetrics.heightPixels
-
+    private lateinit var mImageReader: ImageReader
     private var virtualDisplay: VirtualDisplay? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +31,13 @@ class FloatingServiceSupportActivity : AppCompatActivity() {
 
         binding = ActivityFloatingServiceSupportBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        mImageReader = ImageReader.newInstance(
+            screenWidth,
+            screenHeight,
+            PixelFormat.RGBA_8888,
+            5
+        )
 
         startMediaProjection()
     }
@@ -99,19 +97,20 @@ class FloatingServiceSupportActivity : AppCompatActivity() {
         val planes = image.planes
         val buffer = planes.first().buffer
 
-        var bitmap: Bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        var bitmap: Bitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888)
         bitmap.copyPixelsFromBuffer(buffer)
-        bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height)
+        bitmap = Bitmap.createBitmap(bitmap, 0, 0, screenWidth, screenHeight)
 
         image.close()
         return bitmap
     }
 
     private fun createVirtualDisplay(mediaProjection: MediaProjection) {
+        mediaProjection.registerCallback(object : MediaProjection.Callback() {}, null)
         virtualDisplay = mediaProjection.createVirtualDisplay(
             "FullScreenCapture",
-            width,
-            height,
+            screenWidth,
+            screenHeight,
             resources.displayMetrics.densityDpi,
             VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, // Mirror the primary display
             mImageReader.surface,
@@ -120,5 +119,3 @@ class FloatingServiceSupportActivity : AppCompatActivity() {
         )
     }
 }
-
-class MediaProjectionException : Exception()

@@ -4,11 +4,14 @@ import android.accessibilityservice.AccessibilityButtonController
 import android.accessibilityservice.AccessibilityButtonController.AccessibilityButtonCallback
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import androidx.annotation.RequiresApi
 import de.lflab.screensight.support.FloatingServiceSupportActivity
 
 class ScreenSightAccessibilityService : AccessibilityService() {
@@ -16,7 +19,6 @@ class ScreenSightAccessibilityService : AccessibilityService() {
     private var accessibilityButtonCallback: AccessibilityButtonCallback? = null
     private var isAccessibilityButtonAvailable: Boolean = false
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onServiceConnected() {
         internalAccessibilityButtonController = accessibilityButtonController
         isAccessibilityButtonAvailable =
@@ -31,6 +33,7 @@ class ScreenSightAccessibilityService : AccessibilityService() {
         accessibilityButtonCallback = object : AccessibilityButtonCallback() {
             override fun onClicked(controller: AccessibilityButtonController?) {
                 Log.d("ScreenSightAccessibilityService", "Accessibility button clicked!")
+
                 initAnalysis()
             }
 
@@ -58,8 +61,32 @@ class ScreenSightAccessibilityService : AccessibilityService() {
     }
 
     private fun initAnalysis() {
+        startRunningNotification()
+
         val intent = Intent(this, FloatingServiceSupportActivity::class.java)
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
+    }
+
+    private fun startRunningNotification() {
+        val builder = Notification.Builder(this, "running")
+            .setContentText("running notification")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        val channel = NotificationChannel(
+            "running",
+            "running notification",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        notificationManager.createNotificationChannel(channel)
+        builder.setChannelId("running")
+        val notification = builder.build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(100, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+        } else {
+            startForeground(100, notification)
+        }
     }
 }
