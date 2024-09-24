@@ -1,11 +1,13 @@
 package de.lflab.screensight.support
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR
 import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
+import android.media.ImageReader.OnImageAvailableListener
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Bundle
@@ -13,23 +15,26 @@ import android.util.Log
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import de.lflab.screensight.databinding.ActivityFloatingServiceSupportBinding
+import de.lflab.screensight.databinding.ActivityCaptureSupportBinding
 import de.lflab.screensight.util.screenHeight
 import de.lflab.screensight.util.screenWidth
 import java.io.File
 import java.io.FileOutputStream
 
+private const val TAG = "CaptureSupportActivity"
 
-class FloatingServiceSupportActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityFloatingServiceSupportBinding
+class CaptureSupportActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityCaptureSupportBinding
 
     private lateinit var mImageReader: ImageReader
+
+    private var mediaProjection: MediaProjection? = null
     private var virtualDisplay: VirtualDisplay? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityFloatingServiceSupportBinding.inflate(layoutInflater)
+        binding = ActivityCaptureSupportBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         mImageReader = ImageReader.newInstance(
@@ -38,6 +43,24 @@ class FloatingServiceSupportActivity : AppCompatActivity() {
             PixelFormat.RGBA_8888,
             5
         )
+        val onImageAvailableListener = OnImageAvailableListener {
+            // TODO: Skip a few frames to not include the screen capture pop-up
+            val screenshot = captureScreenshotFromVirtualDisplay()
+            stopMediaProjection()
+
+            val destination = File(filesDir, "screenshot.png")
+
+            try {
+                val out = FileOutputStream(destination)
+                screenshot.compress(Bitmap.CompressFormat.PNG, 100, out)
+                out.flush()
+                out.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            finish()
+        }
+        mImageReader.setOnImageAvailableListener(onImageAvailableListener, null)
 
         startMediaProjection()
     }
@@ -52,9 +75,13 @@ class FloatingServiceSupportActivity : AppCompatActivity() {
             if (result.resultCode == RESULT_OK) {
                 handleMediaProjectionActivityResult(mediaProjectionManager, result)
             } else {
-                Log.e("SupportActivity", "Failed initiate media projection session!")
+                Log.e(TAG, "Failed initiate media projection session!")
             }
         }
+
+        val startForegroundServiceBroadcast = Intent("action_start_foreground")
+        sendBroadcast(startForegroundServiceBroadcast)
+        Log.d(TAG, "startForegroundServiceBroadcast sent")
 
         startMediaProjection.launch(mediaProjectionManager.createScreenCaptureIntent())
     }
@@ -63,32 +90,19 @@ class FloatingServiceSupportActivity : AppCompatActivity() {
         mediaProjectionManager: MediaProjectionManager,
         result: ActivityResult
     ) {
-        val mediaProjection = mediaProjectionManager.getMediaProjection(result.resultCode, result.data!!)
-        createVirtualDisplay(mediaProjection)
-        val screenshot = captureScreenshotFromVirtualDisplay()
-        stopMediaProjection(mediaProjection)
-
-        val destination = File(filesDir, "screenshot.png")
-
-        try {
-            val out = FileOutputStream(destination)
-            screenshot.compress(Bitmap.CompressFormat.PNG, 100, out)
-            out.flush()
-            out.close()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        mediaProjection = mediaProjectionManager.getMediaProjection(result.resultCode, result.data!!)
+        createVirtualDisplay()
     }
 
-    private fun stopMediaProjection(mediaProjection: MediaProjection) {
+    private fun stopMediaProjection() {
         virtualDisplay?.apply {
             release()
             virtualDisplay = null
-            Log.i("SupportActivity", "Virtual Display released")
+            Log.i(TAG, "Virtual Display released")
         }
-        mediaProjection.apply {
+        mediaProjection?.apply {
             stop()
-            Log.i("SupportActivity", "Media Projection stopped")
+            Log.i(TAG, "Media Projection stopped")
         }
     }
 
@@ -105,9 +119,9 @@ class FloatingServiceSupportActivity : AppCompatActivity() {
         return bitmap
     }
 
-    private fun createVirtualDisplay(mediaProjection: MediaProjection) {
-        mediaProjection.registerCallback(object : MediaProjection.Callback() {}, null)
-        virtualDisplay = mediaProjection.createVirtualDisplay(
+    private fun createVirtualDisplay() {
+        mediaProjection?.registerCallback(object : MediaProjection.Callback() {}, null)
+        virtualDisplay = mediaProjection?.createVirtualDisplay(
             "FullScreenCapture",
             screenWidth,
             screenHeight,
