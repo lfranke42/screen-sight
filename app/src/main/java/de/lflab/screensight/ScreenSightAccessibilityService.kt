@@ -18,12 +18,24 @@ import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.content.ContextCompat
+import de.lflab.screensight.network.GenerativeAiRepository
 import de.lflab.screensight.support.CaptureSupportActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
 import java.io.FileNotFoundException
 
 private const val TAG = "ScreenSightAccessibilityService"
 
 class ScreenSightAccessibilityService : AccessibilityService() {
+
+    private val job = SupervisorJob()
+    private val serviceScope = CoroutineScope(Dispatchers.IO + job)
+
+    private val aiRepository: GenerativeAiRepository by inject()
+
     private var internalAccessibilityButtonController: AccessibilityButtonController? = null
     private var accessibilityButtonCallback: AccessibilityButtonCallback? = null
     private var isAccessibilityButtonAvailable: Boolean = false
@@ -147,7 +159,17 @@ class ScreenSightAccessibilityService : AccessibilityService() {
     }
 
     private fun evaluateImage(bitmap: Bitmap) {
-        Log.d(TAG, "evaluateImage: STUB")
-        // TODO: send image to gemini
+        val prompt =
+            "You are talking to a visually impaired user. " +
+                    "Take a look at this screenshot that was taken on an android device. " +
+                    "Ignore the system UI and only pay attention to the actual app content. " +
+                    "Describe what is being displayed, focus on elements that could be potentially inaccessible to the user"
+
+        serviceScope.launch {
+            val response = aiRepository.generateContent(bitmap, prompt)
+            response?.let {
+                Log.d(TAG, response)
+            }
+        }
     }
 }

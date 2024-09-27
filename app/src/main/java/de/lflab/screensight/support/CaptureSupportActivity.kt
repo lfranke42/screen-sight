@@ -32,8 +32,11 @@ class CaptureSupportActivity : AppCompatActivity() {
     private var mediaProjection: MediaProjection? = null
     private var virtualDisplay: VirtualDisplay? = null
 
+    private var imageRead = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        imageRead = false
 
         binding = ActivityCaptureSupportBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -45,6 +48,8 @@ class CaptureSupportActivity : AppCompatActivity() {
             60
         )
         val onImageAvailableListener = OnImageAvailableListener { frame ->
+            if (imageRead) return@OnImageAvailableListener
+
             val screenshot = captureScreenshotFromVirtualDisplay()
             stopMediaProjection()
 
@@ -56,15 +61,16 @@ class CaptureSupportActivity : AppCompatActivity() {
                 screenshot.compress(Bitmap.CompressFormat.PNG, 100, out)
                 out.flush()
                 out.close()
+
+                val screenshotIntent = Intent("action_screenshot_saved")
+                screenshotIntent.putExtra("image", filename)
+                sendBroadcast(screenshotIntent)
+
+                imageRead = true
+                finish()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-
-            val screenshotIntent = Intent("action_screenshot_saved")
-            screenshotIntent.putExtra("image", filename)
-            sendBroadcast(screenshotIntent)
-
-            finish()
         }
         mImageReader.setOnImageAvailableListener(onImageAvailableListener, null)
 
