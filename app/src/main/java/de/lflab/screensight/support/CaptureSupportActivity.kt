@@ -1,6 +1,5 @@
 package de.lflab.screensight.support
 
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
@@ -18,6 +17,8 @@ import androidx.appcompat.app.AppCompatActivity
 import de.lflab.screensight.databinding.ActivityCaptureSupportBinding
 import de.lflab.screensight.util.screenHeight
 import de.lflab.screensight.util.screenWidth
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileOutputStream
 
@@ -41,14 +42,14 @@ class CaptureSupportActivity : AppCompatActivity() {
             screenWidth,
             screenHeight,
             PixelFormat.RGBA_8888,
-            5
+            60
         )
-        val onImageAvailableListener = OnImageAvailableListener {
-            // TODO: Skip a few frames to not include the screen capture pop-up
+        val onImageAvailableListener = OnImageAvailableListener { frame ->
             val screenshot = captureScreenshotFromVirtualDisplay()
             stopMediaProjection()
 
-            val destination = File(filesDir, "screenshot.png")
+            val filename =  "screenshot.png"
+            val destination = File(filesDir, filename)
 
             try {
                 val out = FileOutputStream(destination)
@@ -58,6 +59,11 @@ class CaptureSupportActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+
+            val screenshotIntent = Intent("action_screenshot_saved")
+            screenshotIntent.putExtra("image", filename)
+            sendBroadcast(screenshotIntent)
+
             finish()
         }
         mImageReader.setOnImageAvailableListener(onImageAvailableListener, null)
@@ -67,7 +73,7 @@ class CaptureSupportActivity : AppCompatActivity() {
 
     private fun startMediaProjection() {
         val mediaProjectionManager: MediaProjectionManager =
-            getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
         val startMediaProjection = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
@@ -107,6 +113,10 @@ class CaptureSupportActivity : AppCompatActivity() {
     }
 
     private fun captureScreenshotFromVirtualDisplay(): Bitmap {
+        // Workaround to ensure that we don't capture the screen recording prompt
+        runBlocking {
+            delay(500)
+        }
         val image = mImageReader.acquireLatestImage()
         val planes = image.planes
         val buffer = planes.first().buffer
