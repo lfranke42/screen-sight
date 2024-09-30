@@ -14,9 +14,10 @@ import android.util.Log
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import de.lflab.screensight.ScreenSightAccessibilityService
 import de.lflab.screensight.databinding.ActivityCaptureSupportBinding
-import de.lflab.screensight.util.screenHeight
-import de.lflab.screensight.util.screenWidth
+import de.lflab.screensight.util.deviceHeight
+import de.lflab.screensight.util.deviceWidth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -42,10 +43,10 @@ class CaptureSupportActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         mImageReader = ImageReader.newInstance(
-            screenWidth,
-            screenHeight,
+            deviceWidth,
+            deviceHeight,
             PixelFormat.RGBA_8888,
-            60
+            1,
         )
         val onImageAvailableListener = OnImageAvailableListener { frame ->
             if (imageRead) return@OnImageAvailableListener
@@ -53,7 +54,7 @@ class CaptureSupportActivity : AppCompatActivity() {
             val screenshot = captureScreenshotFromVirtualDisplay()
             stopMediaProjection()
 
-            val filename =  "screenshot.png"
+            val filename = "screenshot.png"
             val destination = File(filesDir, filename)
 
             try {
@@ -62,7 +63,8 @@ class CaptureSupportActivity : AppCompatActivity() {
                 out.flush()
                 out.close()
 
-                val screenshotIntent = Intent("action_screenshot_saved")
+                val screenshotIntent =
+                    Intent(ScreenSightAccessibilityService.ACTION_SCREENSHOT_SAVED)
                 screenshotIntent.putExtra("image", filename)
                 sendBroadcast(screenshotIntent)
 
@@ -91,7 +93,8 @@ class CaptureSupportActivity : AppCompatActivity() {
             }
         }
 
-        val startForegroundServiceBroadcast = Intent("action_start_foreground")
+        val startForegroundServiceBroadcast =
+            Intent(ScreenSightAccessibilityService.ACTION_START_FOREGROUND)
         sendBroadcast(startForegroundServiceBroadcast)
         Log.d(TAG, "startForegroundServiceBroadcast sent")
 
@@ -100,9 +103,10 @@ class CaptureSupportActivity : AppCompatActivity() {
 
     private fun handleMediaProjectionActivityResult(
         mediaProjectionManager: MediaProjectionManager,
-        result: ActivityResult
+        result: ActivityResult,
     ) {
-        mediaProjection = mediaProjectionManager.getMediaProjection(result.resultCode, result.data!!)
+        mediaProjection =
+            mediaProjectionManager.getMediaProjection(result.resultCode, result.data!!)
         createVirtualDisplay()
     }
 
@@ -127,9 +131,9 @@ class CaptureSupportActivity : AppCompatActivity() {
         val planes = image.planes
         val buffer = planes.first().buffer
 
-        var bitmap: Bitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888)
+        var bitmap: Bitmap =
+            Bitmap.createBitmap(mImageReader.width, mImageReader.height, Bitmap.Config.ARGB_8888)
         bitmap.copyPixelsFromBuffer(buffer)
-        bitmap = Bitmap.createBitmap(bitmap, 0, 0, screenWidth, screenHeight)
 
         image.close()
         return bitmap
@@ -139,8 +143,8 @@ class CaptureSupportActivity : AppCompatActivity() {
         mediaProjection?.registerCallback(object : MediaProjection.Callback() {}, null)
         virtualDisplay = mediaProjection?.createVirtualDisplay(
             "FullScreenCapture",
-            screenWidth,
-            screenHeight,
+            deviceWidth,
+            deviceHeight,
             resources.displayMetrics.densityDpi,
             VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, // Mirror the primary display
             mImageReader.surface,

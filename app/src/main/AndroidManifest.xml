@@ -18,13 +18,19 @@
         android:theme="@style/Theme.ScreenSight"
         tools:targetApi="31">
         <activity
+            android:name=".ui.conversation.ConversationActivity"
+            android:exported="false"
+            android:label="@string/title_activity_conversation"
+            android:theme="@style/Theme.ScreenSight" />
+        <activity
             android:name=".support.CaptureSupportActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.Translucent" />
+
         <service
             android:name=".ScreenSightAccessibilityService"
-            android:foregroundServiceType="mediaProjection"
             android:exported="true"
+            android:foregroundServiceType="mediaProjection"
             android:label="@string/accessibility_service_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>

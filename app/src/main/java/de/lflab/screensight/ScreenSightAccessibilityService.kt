@@ -20,14 +20,13 @@ import android.view.accessibility.AccessibilityEvent
 import androidx.core.content.ContextCompat
 import de.lflab.screensight.network.GenerativeAiRepository
 import de.lflab.screensight.support.CaptureSupportActivity
+import de.lflab.screensight.ui.conversation.ConversationActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import java.io.FileNotFoundException
-
-private const val TAG = "ScreenSightAccessibilityService"
 
 class ScreenSightAccessibilityService : AccessibilityService() {
 
@@ -46,7 +45,7 @@ class ScreenSightAccessibilityService : AccessibilityService() {
             Log.i(TAG, "Received Intent for $action")
 
             when (action) {
-                "action_screenshot_saved" -> {
+                ACTION_SCREENSHOT_SAVED -> {
                     val filename = intent.getStringExtra("image")
                     if (filename == null) {
                         Log.e(TAG, "No image received!")
@@ -63,7 +62,7 @@ class ScreenSightAccessibilityService : AccessibilityService() {
                     }
                 }
 
-                "action_start_foreground" -> {
+                ACTION_START_FOREGROUND -> {
                     startRunningNotification()
                 }
             }
@@ -72,7 +71,7 @@ class ScreenSightAccessibilityService : AccessibilityService() {
 
     override fun onCreate() {
         // Start foreground service if permission is given
-        val intentFilter = IntentFilter("action_start_foreground")
+        val intentFilter = IntentFilter(ACTION_START_FOREGROUND)
         ContextCompat.registerReceiver(
             this,
             broadcastReceiver,
@@ -81,7 +80,7 @@ class ScreenSightAccessibilityService : AccessibilityService() {
         )
 
         // Handle successful screenshot creation
-        val screenshotReceiveIntentFilter = IntentFilter("action_screenshot_saved")
+        val screenshotReceiveIntentFilter = IntentFilter(ACTION_SCREENSHOT_SAVED)
         ContextCompat.registerReceiver(
             this,
             broadcastReceiver,
@@ -101,7 +100,7 @@ class ScreenSightAccessibilityService : AccessibilityService() {
 
         accessibilityButtonCallback = object : AccessibilityButtonCallback() {
             override fun onClicked(controller: AccessibilityButtonController?) {
-                initCapture()
+                startCaptureActivity()
             }
 
             override fun onAvailabilityChanged(
@@ -122,17 +121,9 @@ class ScreenSightAccessibilityService : AccessibilityService() {
         unregisterReceiver(broadcastReceiver)
     }
 
-    override fun onAccessibilityEvent(p0: AccessibilityEvent?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onInterrupt() {
-        TODO("Not yet implemented")
-    }
-
-    private fun initCapture() {
+    private fun startCaptureActivity() {
         val intent = Intent(this, CaptureSupportActivity::class.java)
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
     }
 
@@ -168,8 +159,32 @@ class ScreenSightAccessibilityService : AccessibilityService() {
         serviceScope.launch {
             val response = aiRepository.generateContent(bitmap, prompt)
             response?.let {
-                Log.d(TAG, response)
+                Log.d(TAG, it)
+                launchConversationActivity(it)
             }
         }
+
+    }
+
+    private fun launchConversationActivity(response: String) {
+        val intent = Intent(this, ConversationActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        intent.putExtra(AI_RESPONSE_KEY, response)
+        startActivity(intent)
+    }
+
+    override fun onAccessibilityEvent(p0: AccessibilityEvent?) {
+        // Not used
+    }
+
+    override fun onInterrupt() {
+        // Not used
+    }
+
+    companion object {
+        private const val TAG = "ScreenSightAccessibilityService"
+        const val ACTION_SCREENSHOT_SAVED = "action_screenshot_saved"
+        const val ACTION_START_FOREGROUND = "action_start_foreground"
+        const val AI_RESPONSE_KEY = "ai_response"
     }
 }
