@@ -1,10 +1,13 @@
 package de.lflab.screensight.network
 
 import android.graphics.Bitmap
+import android.util.Log
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.GoogleGenerativeAIException
 import com.google.ai.client.generativeai.type.content
 import de.lflab.screensight.BuildConfig
+
+private const val TAG = "GenerativeAiRepositoryImpl"
 
 class GenerativeAiRepositoryImpl : GenerativeAiRepository {
     private val generativeModel = GenerativeModel(
@@ -22,6 +25,8 @@ class GenerativeAiRepositoryImpl : GenerativeAiRepository {
             )
             return response.text
         } catch (e: GoogleGenerativeAIException) {
+            Log.e(TAG, "Failed to get generate AI response")
+            e.printStackTrace()
             return null
         }
     }

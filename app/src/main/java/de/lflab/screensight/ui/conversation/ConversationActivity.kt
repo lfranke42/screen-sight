@@ -6,10 +6,6 @@ import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
 import de.lflab.screensight.ScreenSightAccessibilityService
 import de.lflab.screensight.ui.theme.ScreenSightTheme
 import java.io.FileNotFoundException
@@ -41,13 +37,11 @@ class ConversationActivity : ComponentActivity() {
             enableEdgeToEdge()
             setContent {
                 ScreenSightTheme {
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        ConversationScreen(
-                            response = response,
-                            bitmap = bitmap,
-                            modifier = Modifier.padding(innerPadding)
-                        )
-                    }
+                    ConversationScreen(
+                        response = response,
+                        bitmap = bitmap,
+                        onClose = ::onClose,
+                    )
                 }
             }
         } catch (_: FileNotFoundException) {
@@ -55,8 +49,17 @@ class ConversationActivity : ComponentActivity() {
         }
     }
 
+    private fun onClose() {
+        finish()
+    }
+
     private fun convertTextToSpeech(text: String) {
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        onClose()
     }
 
     override fun onDestroy() {

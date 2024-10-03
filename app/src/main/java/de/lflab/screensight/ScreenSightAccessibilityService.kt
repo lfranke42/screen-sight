@@ -18,8 +18,8 @@ import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.content.ContextCompat
+import de.lflab.screensight.capture.CaptureSupportActivity
 import de.lflab.screensight.network.GenerativeAiRepository
-import de.lflab.screensight.support.CaptureSupportActivity
 import de.lflab.screensight.ui.conversation.ConversationActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +46,7 @@ class ScreenSightAccessibilityService : AccessibilityService() {
 
             when (action) {
                 ACTION_SCREENSHOT_SAVED -> {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
                     val filename = intent.getStringExtra("image")
                     if (filename == null) {
                         Log.e(TAG, "No image received!")
@@ -92,7 +93,7 @@ class ScreenSightAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         internalAccessibilityButtonController = accessibilityButtonController
         isAccessibilityButtonAvailable =
-            internalAccessibilityButtonController?.isAccessibilityButtonAvailable ?: false
+            internalAccessibilityButtonController?.isAccessibilityButtonAvailable == true
 
         serviceInfo = serviceInfo.apply {
             flags = flags or AccessibilityServiceInfo.FLAG_REQUEST_ACCESSIBILITY_BUTTON

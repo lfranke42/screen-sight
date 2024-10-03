@@ -1,4 +1,4 @@
-package de.lflab.screensight.support
+package de.lflab.screensight.capture
 
 import android.content.Intent
 import android.graphics.Bitmap
@@ -90,6 +90,7 @@ class CaptureSupportActivity : AppCompatActivity() {
                 handleMediaProjectionActivityResult(mediaProjectionManager, result)
             } else {
                 Log.e(TAG, "Failed initiate media projection session!")
+                finish()
             }
         }
 
@@ -125,7 +126,7 @@ class CaptureSupportActivity : AppCompatActivity() {
     private fun captureScreenshotFromVirtualDisplay(): Bitmap {
         // Workaround to ensure that we don't capture the screen recording prompt
         runBlocking {
-            delay(500)
+            delay(250)
         }
         val image = mImageReader.acquireLatestImage()
         val planes = image.planes
