@@ -129,14 +129,26 @@ class CaptureSupportActivity : AppCompatActivity() {
             delay(250)
         }
         val image = mImageReader.acquireLatestImage()
+
+        val width = image.width
+        val height = image.height
+
         val planes = image.planes
+
+        val rowStride = planes[0].rowStride // This is the actual memory alignment for each row
+        val pixelStride = planes[0].pixelStride // Number of bytes for each pixel
+        val rowPadding = rowStride - pixelStride * width
+
         val buffer = planes.first().buffer
+        val bitmap = Bitmap.createBitmap(
+            width + rowPadding / pixelStride,
+            height,
+            Bitmap.Config.ARGB_8888
+        )
 
-        var bitmap: Bitmap =
-            Bitmap.createBitmap(mImageReader.width, mImageReader.height, Bitmap.Config.ARGB_8888)
         bitmap.copyPixelsFromBuffer(buffer)
-
         image.close()
+
         return bitmap
     }
 
