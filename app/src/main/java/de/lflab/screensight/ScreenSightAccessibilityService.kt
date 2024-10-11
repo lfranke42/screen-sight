@@ -54,17 +54,13 @@ class ScreenSightAccessibilityService : AccessibilityService() {
                     }
                     try {
                         val inputStream = openFileInput(filename)
-                        val screenshotBitmap = BitmapFactory.decodeStream(inputStream);
+                        val screenshotBitmap = BitmapFactory.decodeStream(inputStream)
                         inputStream.close()
                         evaluateImage(screenshotBitmap)
                     } catch (e: FileNotFoundException) {
                         Log.e(TAG, "File not found! ${e.message}")
                         return
                     }
-                }
-
-                ACTION_START_FOREGROUND -> {
-                    startRunningNotification()
                 }
             }
         }
@@ -123,6 +119,8 @@ class ScreenSightAccessibilityService : AccessibilityService() {
     }
 
     private fun startCaptureActivity() {
+        startRunningNotification()
+
         val intent = Intent(this, CaptureSupportActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
