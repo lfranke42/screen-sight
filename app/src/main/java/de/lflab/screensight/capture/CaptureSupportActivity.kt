@@ -94,12 +94,12 @@ class CaptureSupportActivity : AppCompatActivity() {
             }
         }
 
+        startMediaProjection.launch(mediaProjectionManager.createScreenCaptureIntent())
+
         val startForegroundServiceBroadcast =
             Intent(ScreenSightAccessibilityService.ACTION_START_FOREGROUND)
         sendBroadcast(startForegroundServiceBroadcast)
         Log.d(TAG, "startForegroundServiceBroadcast sent")
-
-        startMediaProjection.launch(mediaProjectionManager.createScreenCaptureIntent())
     }
 
     private fun handleMediaProjectionActivityResult(

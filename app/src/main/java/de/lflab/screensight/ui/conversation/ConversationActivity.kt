@@ -12,7 +12,6 @@ import java.io.FileNotFoundException
 
 class ConversationActivity : ComponentActivity() {
     private lateinit var tts: TextToSpeech
-    private var isTtsAvailable: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,16 +22,16 @@ class ConversationActivity : ComponentActivity() {
         tts = TextToSpeech(this, object : TextToSpeech.OnInitListener {
             override fun onInit(status: Int) {
                 if (status == TextToSpeech.SUCCESS) {
-                    convertTextToSpeech(response)
+                    tts.speak(response, TextToSpeech.QUEUE_FLUSH, null, null)
                 } else {
-                    isTtsAvailable = false
+                    // Nothing to do
                 }
             }
         })
 
         try {
             val inputStream = openFileInput("screenshot.png")
-            val bitmap = BitmapFactory.decodeStream(inputStream);
+            val bitmap = BitmapFactory.decodeStream(inputStream)
             inputStream.close()
             enableEdgeToEdge()
             setContent {
@@ -51,10 +50,6 @@ class ConversationActivity : ComponentActivity() {
 
     private fun onClose() {
         finish()
-    }
-
-    private fun convertTextToSpeech(text: String) {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
     override fun onPause() {
