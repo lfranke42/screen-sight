@@ -8,4 +8,17 @@
     <string name="image2_description">Cookies</string>
     <string name="image3_description">Cake</string>
     <string name="results_placeholder">(Results will appear here)</string>
+    <string name="accessibility_service_label">Screen Sight</string>
+    <string name="accessibility_service_description">
+        Service for analyzing screen content.
+        Keep in mind that everything being captured is sent to Google and analyzed using their proprietary Gemini Models.
+        Do not capture any sensitive information. Use with caution. Analysis may contain inaccurate information.
+    </string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+    <string name="title_activity_conversation">ConversationActivity</string>
+    <string name="conversation_button_close_title">Close</string>
 </resources>
